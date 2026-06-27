@@ -2,7 +2,7 @@
 
 A cute, customizable spin-the-wheel widget built with plain HTML, CSS, and JavaScript — no frameworks, no dependencies, no build step. Set how many slices you want, type in your own prize names, and spin.
 
-**[Live demo →](#)** *(add your GitHub Pages link here once deployed)*
+**[Live demo →](#)** https://palak-eng.github.io/spin-the-wheel/
 
 ![Spin the wheel — desktop view](./screenshots/desktop-view.png)
 
