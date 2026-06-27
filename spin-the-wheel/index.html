@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>spin the wheel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  @font-face{
+    font-family: 'DynaPuff Variable';
+    font-style: normal;
+    font-display: swap;
+    font-weight: 400 700;
+    font-stretch: 75% 100%;
+    src: url(dynapuff-wdth.woff2) format('woff2-variations'),
+         url(dynapuff-wdth.woff2) format('woff2') tech('variations');
+  }
+  @font-face{
+    font-family: 'DynaPuff Bold Static';
+    font-style: normal;
+    font-display: swap;
+    font-weight: 700;
+    src: url(dynapuff_bold.ttf) format('truetype');
+  }
+</style>
+<style>
+  :root{
+    --bg-pink: #FBDEE6;
+    --bg-pink-soft: #FCE7ED;
+    --magenta: #C81E78;
+    --magenta-deep: #A91464;
+    --cream: #F8F1DE;
+    --blush: #F6C9D6;
+    --rose: #EFA6BE;
+    --rose-deep: #E988A8;
+    --dustyrose: #E4B9C7;
+    --card-white: #FFFBFA;
+    --text-soft: #8A5068;
+    --line: #F3C4D2;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  [style*="DynaPuff"], h1.title, .panel h2, .spin-btn, #frame-count, .frame-control label{
+    font-feature-settings: "calt" 0, "salt" 0;
+    font-variant-alternates: normal;
+  }
+  body{
+    background: var(--bg-pink);
+    font-family: 'Quicksand', sans-serif;
+    color: var(--text-soft);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .bg-petals{
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+  .petal{
+    position:absolute;
+    opacity:0.45;
+  }
+
+  .page{
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 24px 36px;
+  }
+
+  header{
+    text-align: center;
+    margin-bottom: 8px;
+  }
+
+  .eyebrow{
+    font-family:'Quicksand',sans-serif;
+    font-weight:700;
+    font-size:13px;
+    letter-spacing:0.22em;
+    text-transform:uppercase;
+    color: var(--rose-deep);
+    margin: 0 0 6px;
+  }
+
+  h1.title{
+    font-family: 'DynaPuff Bold Static', 'DynaPuff Variable', sans-serif;
+    font-stretch: 75%;
+    font-weight: 700;
+    font-size: clamp(40px, 7vw, 72px);
+    color: var(--magenta);
+    margin: 0;
+    letter-spacing: 0.5px;
+    text-shadow: 3px 3px 0 rgba(255,255,255,0.55);
+    font-feature-settings: "calt" 0, "salt" 0;
+    font-variant-alternates: normal;
+  }
+
+  .subtitle{
+    font-size: 16px;
+    color: var(--text-soft);
+    margin: 10px auto 0;
+    max-width: 460px;
+    line-height: 1.6;
+  }
+
+  .layout{
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 40px;
+    align-items: start;
+    margin-top: 26px;
+  }
+
+  @media (max-width: 860px){
+    .layout{ grid-template-columns: 1fr; }
+  }
+
+  /* ---- wheel column ---- */
+  .wheel-col{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .wheel-stage{
+    position: relative;
+    width: min(360px, 80vw);
+    height: min(360px, 80vw);
+    margin-top: 4px;
+  }
+
+  .pointer{
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0; height: 0;
+    border-left: 16px solid transparent;
+    border-right: 16px solid transparent;
+    border-top: 28px solid var(--magenta);
+    z-index: 6;
+    filter: drop-shadow(0 2px 2px rgba(168,20,100,0.25));
+  }
+  .pointer::after{
+    content:'';
+    position:absolute;
+    top:-30px; left:-6px;
+    width:12px; height:12px;
+    border-radius:50%;
+    background: var(--magenta);
+  }
+
+  .wheel-ring{
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: var(--card-white);
+    padding: 10px;
+    box-shadow:
+      0 0 0 3px var(--blush),
+      0 18px 40px -12px rgba(168,20,100,0.30);
+  }
+
+  .wheel-svg{
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    transition: transform 4.2s cubic-bezier(0.16,0.84,0.22,1);
+    display:block;
+  }
+
+  .hub{
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 112px; height: 112px;
+    transform: translate(-50%,-50%);
+    border-radius: 50%;
+    background: var(--card-white);
+    box-shadow: 0 0 0 7px var(--bg-pink-soft), 0 2px 10px rgba(168,20,100,0.18);
+    z-index: 5;
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden;
+  }
+  .hub img{
+    width: 92%;
+    height: 92%;
+    object-fit: contain;
+  }
+
+  .spin-btn{
+    margin-top: 20px;
+    font-family: 'DynaPuff Variable', 'DynaPuff', sans-serif;
+    font-variation-settings: 'wdth' 75;
+    font-weight: 700;
+    font-size: 19px;
+    letter-spacing: 0.5px;
+    color: #fff;
+    background: var(--magenta);
+    border: none;
+    border-radius: 999px;
+    padding: 15px 52px;
+    cursor: pointer;
+    box-shadow: 0 8px 0 var(--magenta-deep);
+    transition: transform 0.12s ease;
+  }
+  .spin-btn:hover{ background: var(--magenta-deep); }
+  .spin-btn:active{ transform: translateY(6px); box-shadow: 0 2px 0 var(--magenta-deep); }
+  .spin-btn:disabled{
+    background: var(--dustyrose);
+    box-shadow: 0 8px 0 #d6a6b6;
+    cursor: default;
+  }
+
+  .result-banner{
+    margin-top: 18px;
+    min-height: 30px;
+    font-family: 'DynaPuff Variable', 'DynaPuff', sans-serif;
+    font-variation-settings: 'wdth' 75;
+    font-size: 20px;
+    color: var(--magenta-deep);
+    background: var(--card-white);
+    border: 2px dashed var(--rose);
+    border-radius: 16px;
+    padding: 10px 22px;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+  .result-banner.show{ opacity: 1; }
+
+  /* ---- controls column ---- */
+  .panel{
+    background: var(--card-white);
+    border-radius: 22px;
+    padding: 28px 26px 30px;
+    box-shadow: 0 14px 32px -16px rgba(168,20,100,0.20);
+    border: 1.5px solid var(--line);
+  }
+
+  .panel h2{
+    font-family: 'DynaPuff Variable', 'DynaPuff', sans-serif;
+    font-variation-settings: 'wdth' 75;
+    font-size: 21px;
+    color: var(--magenta);
+    margin: 0 0 4px;
+  }
+  .panel p.hint{
+    font-size: 13.5px;
+    color: var(--text-soft);
+    opacity: 0.85;
+    margin: 0 0 18px;
+  }
+
+  .frame-control{
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 22px;
+    background: var(--bg-pink-soft);
+    border-radius: 14px;
+    padding: 10px 14px;
+  }
+  .frame-control label{
+    font-family: 'DynaPuff Variable', 'DynaPuff', sans-serif;
+    font-variation-settings: 'wdth' 75;
+    font-size: 14px;
+    color: var(--magenta-deep);
+    flex: 1;
+  }
+  .stepper{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .step-btn{
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    border: 1.5px solid var(--rose);
+    background: #fff;
+    color: var(--magenta);
+    font-size: 17px;
+    font-weight: 700;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+    line-height:1;
+  }
+  .step-btn:hover{ background: var(--blush); }
+  #frame-count{
+    font-family: 'DynaPuff Variable', 'DynaPuff', sans-serif;
+    font-variation-settings: 'wdth' 75;
+    font-size: 17px;
+    color: var(--magenta-deep);
+    min-width: 22px;
+    text-align:center;
+  }
+
+  .items-grid{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+    margin-bottom: 6px;
+  }
+
+  .item-row{
+    position: relative;
+    display:flex;
+    align-items:center;
+  }
+  .swatch{
+    position:absolute;
+    left: 11px;
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    flex-shrink:0;
+  }
+  .item-input{
+    width: 100%;
+    height: 38px;
+    border-radius: 999px;
+    border: 1.5px solid var(--line);
+    background: #fff;
+    padding: 0 14px 0 28px;
+    font-size: 13px;
+    font-family:'Quicksand',sans-serif;
+    font-weight: 600;
+    color: var(--text-soft);
+    outline: none;
+  }
+  .item-input:focus{ border-color: var(--rose-deep); }
+
+  .panel-footer{
+    margin-top: 16px;
+    font-size: 12.5px;
+    color: var(--text-soft);
+    opacity: 0.75;
+    text-align: center;
+  }
+
+  footer.page-footer{
+    text-align:center;
+    margin-top: 28px;
+    font-size: 13px;
+    color: var(--text-soft);
+    opacity: 0.7;
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-petals" id="bg-petals"></div>
+
+<div class="page">
+
+  <header>
+    <p class="eyebrow">make your own lucky draw</p>
+    <h1 class="title">spin the wheel</h1>
+    <p class="subtitle">set how many slices you want, fill them in below, then give it a spin.</p>
+  </header>
+
+  <div class="layout">
+
+    <div class="wheel-col">
+      <div class="wheel-stage">
+        <div class="pointer"></div>
+        <div class="wheel-ring">
+          <svg class="wheel-svg" id="wheel-svg" viewBox="0 0 400 400"></svg>
+        </div>
+        <div class="hub">
+          <img src="bunny.png" alt="cute bunny" />
+        </div>
+      </div>
+
+      <button class="spin-btn" id="spin-btn">spin!</button>
+      <div class="result-banner" id="result-banner"></div>
+    </div>
+
+    <div class="panel">
+      <h2>set up your wheel</h2>
+      <p class="hint">choose the number of slices, then name each one.</p>
+
+      <div class="frame-control">
+        <label for="frame-count">number of frames</label>
+        <div class="stepper">
+          <button class="step-btn" id="dec-btn" aria-label="decrease frames">−</button>
+          <span id="frame-count">8</span>
+          <button class="step-btn" id="inc-btn" aria-label="increase frames">+</button>
+        </div>
+      </div>
+
+      <div class="items-grid" id="items-grid"></div>
+
+      <p class="panel-footer">tip: shorter names fit the slices best</p>
+    </div>
+
+  </div>
+
+  <footer class="page-footer">made with care, for whatever you're deciding today</footer>
+
+</div>
+
+<script>
+(function(){
+
+  var palette = ["#F8F1DE","#F0C7D6","#F7C9A8","#F3E4C6","#EFA6BE","#FBE3E9","#F8F1DE","#E9B8C9","#F7C9A8","#F3E4C6","#EFA6BE","#FBE3E9"];
+  var strokeColor = "#FCEFF2";
+
+  var defaultLabels = ["prize 1","prize 2","prize 3","prize 4","prize 5","prize 6","prize 7","prize 8","prize 9","prize 10","prize 11","prize 12"];
+
+  var state = {
+    count: 8,
+    labels: defaultLabels.slice(0,8),
+    rotation: 0,
+    spinning: false
+  };
+
+  var svg = document.getElementById('wheel-svg');
+  var grid = document.getElementById('items-grid');
+  var frameCountEl = document.getElementById('frame-count');
+  var resultBanner = document.getElementById('result-banner');
+  var spinBtn = document.getElementById('spin-btn');
+
+  function polar(cx, cy, r, angleDeg){
+    var rad = (angleDeg - 90) * Math.PI / 180;
+    return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
+  }
+
+  function renderWheel(){
+    var n = state.count;
+    var cx = 200, cy = 200, r = 196;
+    var slice = 360 / n;
+    var html = "";
+    for (var i = 0; i < n; i++){
+      var startAngle = i * slice;
+      var endAngle = startAngle + slice;
+      var p1 = polar(cx, cy, r, startAngle);
+      var p2 = polar(cx, cy, r, endAngle);
+      var largeArc = slice > 180 ? 1 : 0;
+      var color = palette[i % palette.length];
+      html += '<path d="M'+cx+','+cy+' L'+p1[0].toFixed(2)+','+p1[1].toFixed(2)+' A'+r+','+r+' 0 '+largeArc+' 1 '+p2[0].toFixed(2)+','+p2[1].toFixed(2)+' Z" fill="'+color+'" stroke="'+strokeColor+'" stroke-width="2.5"/>';
+
+      var midAngle = startAngle + slice / 2;
+      var labelPos = polar(cx, cy, r * 0.6, midAngle);
+      var label = (state.labels[i] || "").trim();
+      if (!label) label = "prize " + (i + 1);
+      if (label.length > 12) label = label.slice(0, 11) + "…";
+      html += '<text x="'+labelPos[0].toFixed(2)+'" y="'+labelPos[1].toFixed(2)+'" transform="rotate('+midAngle.toFixed(2)+' '+labelPos[0].toFixed(2)+' '+labelPos[1].toFixed(2)+')" text-anchor="middle" font-family="DynaPuff Variable, DynaPuff, sans-serif" font-stretch="75%" font-size="14" font-weight="600" fill="#974063">'+label+'</text>';
+    }
+    svg.innerHTML = html;
+    svg.style.transform = "rotate(" + state.rotation + "deg)";
+  }
+
+  function renderInputs(){
+    grid.innerHTML = "";
+    for (var i = 0; i < state.count; i++){
+      var row = document.createElement('div');
+      row.className = 'item-row';
+
+      var dot = document.createElement('span');
+      dot.className = 'swatch';
+      dot.style.background = palette[i % palette.length];
+      row.appendChild(dot);
+
+      var input = document.createElement('input');
+      input.className = 'item-input';
+      input.value = state.labels[i] || ("prize " + (i + 1));
+      input.placeholder = "prize " + (i + 1);
+      input.maxLength = 18;
+      input.dataset.idx = i;
+      input.addEventListener('input', function(e){
+        var idx = parseInt(e.target.dataset.idx, 10);
+        state.labels[idx] = e.target.value;
+        renderWheel();
+      });
+      row.appendChild(input);
+
+      grid.appendChild(row);
+    }
+  }
+
+  function setCount(n){
+    n = Math.max(2, Math.min(12, n));
+    if (n === state.count) return;
+    while (state.labels.length < n){
+      state.labels.push(defaultLabels[state.labels.length] || ("prize " + (state.labels.length + 1)));
+    }
+    state.count = n;
+    frameCountEl.textContent = n;
+    renderInputs();
+    renderWheel();
+  }
+
+  document.getElementById('inc-btn').addEventListener('click', function(){ setCount(state.count + 1); });
+  document.getElementById('dec-btn').addEventListener('click', function(){ setCount(state.count - 1); });
+
+  spinBtn.addEventListener('click', function(){
+    if (state.spinning) return;
+    state.spinning = true;
+    spinBtn.disabled = true;
+    resultBanner.classList.remove('show');
+    resultBanner.textContent = "";
+
+    var n = state.count;
+    var slice = 360 / n;
+    var winnerIdx = Math.floor(Math.random() * n);
+    var targetAngleInWheel = winnerIdx * slice + slice / 2;
+    var extraSpins = 5 + Math.floor(Math.random() * 2);
+    var currentMod = ((state.rotation % 360) + 360) % 360;
+    var neededRotation = (360 - targetAngleInWheel - currentMod + 360) % 360;
+    state.rotation += extraSpins * 360 + neededRotation;
+
+    svg.style.transform = "rotate(" + state.rotation + "deg)";
+
+    setTimeout(function(){
+      var winnerLabel = (state.labels[winnerIdx] || "").trim() || ("prize " + (winnerIdx + 1));
+      resultBanner.textContent = "it landed on: " + winnerLabel;
+      resultBanner.classList.add('show');
+      state.spinning = false;
+      spinBtn.disabled = false;
+    }, 4300);
+  });
+
+  var petalSpots = [
+    {left:6, top:8, size:30, rot:-20, color:"#F0C7D6"},
+    {left:90, top:6, size:24, rot:35, color:"#F7C9A8"},
+    {left:4, top:46, size:18, rot:10, color:"#EFA6BE"},
+    {left:93, top:38, size:34, rot:-15, color:"#F8F1DE"},
+    {left:12, top:82, size:26, rot:25, color:"#F7C9A8"},
+    {left:88, top:80, size:20, rot:-30, color:"#EFA6BE"},
+    {left:48, top:4, size:16, rot:0, color:"#F0C7D6"},
+    {left:60, top:92, size:22, rot:15, color:"#F8F1DE"}
+  ];
+
+  function makePetal(spot){
+    var el = document.createElement('div');
+    el.className = 'petal';
+    el.style.width = spot.size + 'px';
+    el.style.height = spot.size + 'px';
+    el.style.left = spot.left + 'vw';
+    el.style.top = spot.top + 'vh';
+    el.style.background = spot.color;
+    el.style.borderRadius = '50% 50% 50% 0';
+    el.style.transform = 'rotate(' + spot.rot + 'deg)';
+    return el;
+  }
+
+  var bgPetals = document.getElementById('bg-petals');
+  petalSpots.forEach(function(spot){
+    bgPetals.appendChild(makePetal(spot));
+  });
+
+  renderInputs();
+  renderWheel();
+
+})();
+</script>
+
+</body>
+</html>
